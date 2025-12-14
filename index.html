@@ -1,1343 +1,473 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <title>Roman Tic Tac Toe — SPQR</title>
-  <!-- Google Font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <title>Котик после уроков</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <style>
-    :root {
-      --bg-main: #ece7df;
-      --bg-panel: rgba(255, 255, 255, 0.9);
-      --bg-panel-soft: rgba(255, 255, 255, 0.7);
-      --accent-gold: #c6a052;
-      --accent-gold-soft: rgba(198, 160, 82, 0.15);
-      --accent-red: #80312a;
-      --text-main: #2c2520;
-      --text-soft: #6b625a;
-      --shadow-soft: 0 18px 40px rgba(34, 24, 14, 0.25);
-      --board-border: rgba(0, 0, 0, 0.12);
-      --cell-bg: rgba(255, 255, 255, 0.9);
-      --cell-bg-hover: rgba(255, 255, 255, 1);
-      --cell-border: rgba(0, 0, 0, 0.1);
-      --loss-muted: rgba(0,0,0,0.25);
-      --board-size: min(80vmin, 520px);
-      --radius-panel: 28px;
-      --radius-soft: 18px;
-      --transition-fast: 150ms ease-out;
-      --transition-med: 220ms ease-out;
-    }
-    /* Night Legion theme */
-    body.theme-night {
-      --bg-main: radial-gradient(circle at top, #15151c 0%, #050509 55%, #000 100%);
-      --bg-panel: rgba(15, 16, 25, 0.94);
-      --bg-panel-soft: rgba(15, 16, 25, 0.85);
-      --accent-gold: #e0b45d;
-      --accent-gold-soft: rgba(224, 180, 93, 0.25);
-      --accent-red: #b63a34;
-      --text-main: #f9fafb;
-      --text-soft: #9ca3af;
-      --shadow-soft: 0 24px 60px rgba(0, 0, 0, 0.9);
-      --board-border: rgba(148, 163, 184, 0.4);
-      --cell-bg: rgba(15, 23, 42, 0.96);
-      --cell-bg-hover: rgba(17, 24, 39, 1);
-      --cell-border: rgba(148, 163, 184, 0.6);
-    }
-    /* Legion sand theme */
-    body.theme-legion {
-      --bg-main: radial-gradient(circle at top, #f1e3c1 0%, #d4c49b 55%, #c3ac7e 100%);
-      --bg-panel: rgba(255, 249, 235, 0.96);
-      --bg-panel-soft: rgba(255, 249, 235, 0.82);
-      --accent-gold: #b68537;
-      --accent-gold-soft: rgba(182, 133, 55, 0.25);
-      --accent-red: #7c2d12;
-      --text-main: #3b2718;
-      --text-soft: #70543c;
-      --shadow-soft: 0 24px 50px rgba(86, 58, 22, 0.6);
-      --board-border: rgba(120, 72, 24, 0.3);
-      --cell-bg: rgba(255, 255, 255, 0.95);
-      --cell-bg-hover: #ffffff;
-      --cell-border: rgba(120, 72, 24, 0.28);
-    }
+    /* ==================================================
+       RESET / BASE
+    ================================================== */
     * {
       box-sizing: border-box;
+      font-family: Arial, sans-serif;
     }
+
     body {
       margin: 0;
-      min-height: 100vh;
+      height: 100vh;
+      background: #1e1e1e;
+      color: #fff;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--bg-main);
-      color: var(--text-main);
-      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
-    .app-shell {
-      width: 100%;
-      max-width: 1080px;
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+    }
+
+    /* ==================================================
+       LEFT PANEL
+    ================================================== */
+    .sidebar {
+      width: 240px;
+      background: #0f172a;
       padding: 16px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      align-items: stretch;
-      justify-content: center;
-    }
-    .panel {
-      background: var(--bg-panel);
-      border-radius: var(--radius-panel);
-      box-shadow: var(--shadow-soft);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      backdrop-filter: blur(12px);
-      position: relative;
-      overflow: hidden;
-    }
-    .marble-veins::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      opacity: 0.22;
-      background-image:
-        radial-gradient(circle at 10% 0, rgba(255,255,255,0.45), transparent 55%),
-        radial-gradient(circle at 90% 20%, rgba(255,255,255,0.35), transparent 55%),
-        repeating-linear-gradient(120deg, rgba(0,0,0,0.04) 0, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 5px);
-      mix-blend-mode: soft-light;
-    }
-    .content {
-      position: relative;
-      padding: 18px 18px 20px;
-      display: grid;
-      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.4fr);
-      gap: 20px;
-      align-items: center;
-    }
-    @media (max-width: 800px) {
-      .content {
-        grid-template-columns: minmax(0, 1fr);
-      }
-    }
-    /* Top bar */
-    .top-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
       gap: 12px;
-      margin-bottom: 10px;
-      position: relative;
-      z-index: 1;
     }
-    .crest {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+
+    .sidebar h2 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      opacity: 0.9;
     }
-    .crest-emblem {
-      width: 40px;
-      height: 40px;
-      border-radius: 999px;
-      border: 2px solid var(--accent-gold);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: "Cinzel", serif;
-      font-weight: 700;
-      font-size: 0.9rem;
-      color: var(--accent-gold);
-      background: radial-gradient(circle at 30% 0, rgba(255,255,255,0.2), rgba(0,0,0,0.65));
-      box-shadow: 0 8px 18px rgba(0,0,0,0.55);
-    }
-    .crest-text {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    .crest-title {
-      font-family: "Cinzel", serif;
-      letter-spacing: 0.16em;
-      font-size: 0.8rem;
-      text-transform: uppercase;
-    }
-    .crest-sub {
-      font-size: 0.75rem;
-      color: var(--text-soft);
-    }
-    .top-buttons {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-    .btn {
-      border-radius: 999px;
-      padding: 8px 14px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      letter-spacing: 0.09em;
-      text-transform: uppercase;
-      border: 1px solid rgba(0,0,0,0.12);
-      background: var(--bg-panel-soft);
-      color: var(--text-main);
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      transition:
-        background var(--transition-fast),
-        box-shadow var(--transition-fast),
-        border-color var(--transition-fast),
-        transform 120ms ease-out;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, var(--accent-gold) 0%, #f1d49a 55%, var(--accent-gold) 100%);
-      border-color: rgba(0,0,0,0.25);
-      color: #1a1308;
-      box-shadow: 0 10px 24px rgba(115, 85, 31, 0.6);
-    }
-    .btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.35);
-      background: #ffffff;
-    }
-    .btn-primary:hover {
-      box-shadow: 0 14px 30px rgba(115, 85, 31, 0.7);
-    }
-    .btn:active {
-      transform: translateY(0);
-      box-shadow: none;
-    }
-    .btn-ghost {
-      background: transparent;
-    }
-    /* Left column: info + scoreboard + banner + quiz */
-    .info-col {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      position: relative;
-      z-index: 1;
-    }
-    .colosseum-ghost {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      opacity: 0.14;
-      background:
-        radial-gradient(circle at 10% 0, rgba(255,255,255,0.24), transparent 60%),
-        repeating-linear-gradient(120deg, rgba(0,0,0,0.08) 0, rgba(0,0,0,0.08) 1px, transparent 1px, transparent 4px);
-      mask:
-        radial-gradient(circle at 0 0, transparent 0, transparent 40%, black 55%);
-      mix-blend-mode: soft-light;
-    }
-    .info-card {
-      position: relative;
-      padding: 10px 12px 10px;
-      border-radius: var(--radius-soft);
-      background: var(--bg-panel-soft);
-      border: 1px solid rgba(0,0,0,0.08);
-      box-shadow: 0 10px 26px rgba(0,0,0,0.12);
-      overflow: hidden;
-    }
-    .info-card h2 {
-      margin: 0 0 6px;
-      font-size: 1rem;
-      font-family: "Cinzel", serif;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-    }
-    .info-card p {
-      margin: 0;
-      font-size: 0.8rem;
-      color: var(--text-soft);
-    }
-    .scoreboard {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 8px;
-      margin-top: 8px;
-    }
-    .score-pill {
-      border-radius: 999px;
-      padding: 7px 9px;
-      background: rgba(255,255,255,0.9);
-      border: 1px solid rgba(0,0,0,0.07);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 2px;
-      font-size: 0.75rem;
-      text-align: center;
-      min-width: 0;
-    }
-    .score-label {
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--text-soft);
-      font-weight: 600;
-      white-space: nowrap;
-    }
-    .score-value {
-      font-weight: 700;
-      font-size: 1rem;
-    }
-    .score-x {
-      color: var(--accent-red);
-    }
-    .score-o {
-      color: var(--accent-gold);
-    }
-    .banner {
-      margin-top: 8px;
-      padding: 7px 10px;
-      border-radius: 999px;
-      background: var(--accent-gold-soft);
-      border: 1px solid rgba(198,160,82,0.5);
-      font-size: 0.8rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--text-main);
-    }
-    .banner span.symbol {
-      font-size: 1rem;
-    }
-    .status-line {
-      margin-top: 4px;
-      font-size: 0.78rem;
-      color: var(--text-soft);
-    }
-    /* Share button */
-    .share-row {
-      margin-top: 6px;
-      display: flex;
-      justify-content: flex-end;
-    }
-    .btn-share {
-      font-size: 0.7rem;
-      padding: 6px 10px;
-    }
-    /* Quiz block */
-    .quiz-shell {
-      margin-top: 10px;
-      padding: 8px 10px;
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.92);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      font-size: 0.8rem;
-    }
-    .quiz-title {
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      font-size: 0.75rem;
-      color: var(--text-soft);
-      margin-bottom: 4px;
-    }
-    .quiz-question {
-      margin-bottom: 6px;
-    }
-    .quiz-options {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 4px;
-    }
-    .quiz-btn {
-      font-size: 0.78rem;
-      padding: 4px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(0,0,0,0.18);
-      background: #f9fafb;
-      cursor: pointer;
-      transition:
-        background var(--transition-fast),
-        border-color var(--transition-fast),
-        transform 120ms ease-out,
-        box-shadow 120ms ease-out;
-    }
-    .quiz-btn:hover {
-      background: #ffffff;
-      border-color: var(--accent-gold);
-      transform: translateY(-1px);
-      box-shadow: 0 6px 14px rgba(0,0,0,0.18);
-    }
-    .quiz-btn:active {
-      transform: translateY(0);
-      box-shadow: none;
-    }
-    .quiz-feedback {
-      font-size: 0.78rem;
-      min-height: 1.1em;
-      color: var(--accent-red);
-    }
-    .quiz-feedback.correct {
-      color: #15803d;
-      font-weight: 600;
-    }
-    /* Board */
-    .board-shell {
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .board {
-      width: var(--board-size);
-      height: var(--board-size);
-      max-width: 100%;
-      max-height: calc(90vh - 180px);
-      background: var(--accent-gold-soft);
-      border-radius: var(--radius-panel);
-      padding: 14px;
-      box-shadow:
-        0 16px 34px rgba(0,0,0,0.45),
-        inset 0 0 0 1px var(--board-border);
-      display: grid;
-      grid-template-rows: repeat(3, 1fr);
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
-    .cell {
-      border-radius: 20px;
-      border: 1px solid var(--cell-border);
-      background: var(--cell-bg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-family: "Cinzel", serif;
-      font-size: clamp(2.2rem, 6vmin, 3.4rem);
-      font-weight: 600;
-      color: var(--text-main);
-      box-shadow: 0 12px 24px rgba(0,0,0,0.25);
-      transition:
-        transform var(--transition-med),
-        box-shadow var(--transition-med),
-        background var(--transition-fast),
-        border-color var(--transition-fast),
-        color var(--transition-fast);
-      outline: none;
-    }
-    .cell:hover {
-      transform: translateY(-2px);
-      background: var(--cell-bg-hover);
-      box-shadow: 0 16px 30px rgba(0,0,0,0.28);
-      border-color: var(--accent-gold);
-    }
-    .cell:active {
-      transform: translateY(0);
-      box-shadow: 0 10px 18px rgba(0,0,0,0.24);
-    }
-    .cell[aria-disabled="true"] {
-      cursor: default;
-      opacity: 0.82;
-    }
-    .cell-occupied {
-      cursor: default;
-    }
-    .cell.win {
-      background: radial-gradient(circle at 30% 0, #fff1c4, #f3da90);
-      border-color: var(--accent-gold);
-      box-shadow:
-        0 0 0 2px rgba(255, 244, 199, 0.9),
-        0 18px 40px rgba(198,160,82,0.8);
-      transform: translateY(-3px);
-      color: #3c280a;
-    }
-    .cell.lost {
-      opacity: 0.45;
-      color: var(--loss-muted);
-    }
-    /* Customize dialog */
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.55);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 40;
-    }
-    .modal-backdrop.open {
-      display: flex;
-    }
-    .modal {
-      width: 100%;
-      max-width: 420px;
-      background: var(--bg-panel);
-      border-radius: 20px;
-      border: 1px solid rgba(0,0,0,0.25);
-      padding: 16px 16px 14px;
-      box-shadow: 0 24px 60px rgba(0,0,0,0.75);
+
+    .sidebar button {
+      padding: 12px;
+      background: #1f2937;
+      color: #fff;
+      transition: background 0.2s, opacity 0.2s;
       position: relative;
     }
-    .modal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 10px;
+
+    .sidebar button:hover:not(:disabled) {
+      background: #374151;
     }
-    .modal-title {
-      font-family: "Cinzel", serif;
-      font-size: 1rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
+
+    .sidebar button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
-    .modal-close {
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      font-size: 1.2rem;
-      line-height: 1;
+
+    /* ==================================================
+       STATUS LABELS ON BUTTONS
+    ================================================== */
+    .status-label {
+      font-size: 10px;
       padding: 2px 6px;
-      color: var(--text-soft);
-      border-radius: 999px;
-      transition: background 120ms ease-out, color 120ms ease-out;
+      border-radius: 4px;
+      margin-left: 8px;
+      background: #374151;
+      color: #fff;
+      display: inline-block;
     }
-    .modal-close:hover {
-      background: rgba(0,0,0,0.08);
-      color: var(--text-main);
+
+    .status-label.processing {
+      background: #f59e0b; /* жёлтый */
+      color: #000;
     }
-    .modal-body {
-      display: grid;
-      gap: 10px;
-      font-size: 0.82rem;
-      color: var(--text-main);
+
+    .status-label.completed {
+      background: #10b981; /* зелёный */
+      color: #fff;
     }
-    .field-group {
-      padding: 8px 9px;
-      border-radius: 12px;
-      background: var(--bg-panel-soft);
-      border: 1px solid rgba(0,0,0,0.08);
-    }
-    .field-label {
-      font-size: 0.78rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--text-soft);
-      margin-bottom: 4px;
-    }
-    .options-row {
+
+    /* ==================================================
+       MAIN SCENE
+    ================================================== */
+    .scene {
+      flex: 1;
       display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 4px;
-    }
-    .chip {
-      border-radius: 999px;
-      border: 1px solid rgba(0,0,0,0.15);
-      padding: 4px 9px;
-      font-size: 0.78rem;
-      cursor: pointer;
-      background: rgba(255,255,255,0.9);
-      display: inline-flex;
+      justify-content: center;
       align-items: center;
-      gap: 4px;
-      transition:
-        background var(--transition-fast),
-        border-color var(--transition-fast),
-        color var(--transition-fast),
-        transform 120ms ease-out;
+      position: relative;
+      background: #e5e7eb;
     }
-    .chip input {
-      display: none;
+
+    .scene img {
+      width: 90%;
+      max-width: 900px;
+      height: auto;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
     }
-    .chip span.glyph-preview {
-      font-family: "Cinzel", serif;
+
+    .preview-label {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 14px;
     }
-    .chip.selected {
-      background: var(--accent-gold-soft);
-      border-color: var(--accent-gold);
-      color: var(--accent-red);
-      transform: translateY(-1px);
-    }
-    .modal-footer {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-      margin-top: 12px;
-    }
-    /* Confetti canvas */
-    #confettiCanvas {
+
+    /* ==================================================
+       MODAL
+    ================================================== */
+    .modal {
       position: fixed;
       inset: 0;
-      pointer-events: none;
-      z-index: 30;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
     }
-    /* Accessibility helpers (visually hidden) */
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: #fff;
+      width: 90%;
+      max-width: 800px;
+      height: 80%;
+      border-radius: 16px;
       overflow: hidden;
-      clip: rect(0,0,0,0);
-      white-space: nowrap;
-      border-width: 0;
+      position: relative;
+    }
+
+    .modal-content iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #000;
+      color: #fff;
+      padding: 6px 10px;
+      z-index: 2;
+    }
+
+    /* ==================================================
+       ENDINGS (PAGES INSIDE ONE HTML)
+    ================================================== */
+    .ending {
+      position: fixed;
+      inset: 0;
+      background: #111827;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 24px;
+      z-index: 20;
+    }
+
+    .ending.active {
+      display: flex;
+    }
+
+    .ending-box {
+      max-width: 600px;
+      background: #1f2937;
+      padding: 32px;
+      border-radius: 16px;
+    }
+
+    .ending-box h1 {
+      margin-top: 0;
+    }
+
+    /* ==================================================
+       DEV PANEL (TOP RIGHT)
+    ================================================== */
+    .dev-panel {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      display: flex;
+      gap: 8px;
+      z-index: 100;
+    }
+
+    .dev-panel button {
+      background: #020617;
+      color: #fff;
+      padding: 6px 10px;
+      font-size: 12px;
+      opacity: 0.85;
+    }
+
+    .dev-panel button:hover {
+      opacity: 1;
+    }
+
+    /* ==================================================
+       ADAPTIVE
+    ================================================== */
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+
+      .sidebar button {
+        flex: 1 1 45%;
+      }
     }
   </style>
 </head>
-<body class="theme-day">
-  <canvas id="confettiCanvas" aria-hidden="true"></canvas>
-  <div class="app-shell">
-    <div class="panel marble-veins" aria-label="Roman Tic Tac Toe Game">
-      <div class="content">
-        <div class="info-col">
-          <div class="colosseum-ghost" aria-hidden="true"></div>
-          <header class="top-bar">
-            <div class="crest" aria-hidden="true">
-              <div class="crest-emblem">SPQR</div>
-              <div class="crest-text">
-                <div class="crest-title">Tic Tac Imperium</div>
-                <div class="crest-sub">Claim three provinces in a row.</div>
-              </div>
-            </div>
-            <div class="top-buttons">
-              <button class="btn btn-primary" id="btnNewRound">New Round</button>
-              <button class="btn" id="btnCustomize">Customize</button>
-              <button class="btn" id="btnResetScores">Reset Scores</button>
-            </div>
-          </header>
-          <section class="info-card" aria-describedby="statusText">
-            <h2>Match Chronicle</h2>
-            <p id="statusText" aria-live="polite">
-              X marches first. Select a tile to deploy your legion.
-            </p>
-            <div class="scoreboard" aria-label="Scoreboard">
-              <div class="score-pill">
-                <div class="score-label">X</div>
-                <div class="score-value score-x" id="scoreX">0</div>
-              </div>
-              <div class="score-pill">
-                <div class="score-label">Draws</div>
-                <div class="score-value" id="scoreDraw">0</div>
-              </div>
-              <div class="score-pill">
-                <div class="score-label">O</div>
-                <div class="score-value score-o" id="scoreO">0</div>
-              </div>
-            </div>
-            <div class="banner" id="banner">
-              <span class="symbol" aria-hidden="true">🏛️</span>
-              <span id="bannerText">Awaiting your strategy, commander.</span>
-            </div>
-            <!-- Quiz before move -->
-            <div class="quiz-shell" id="quizShell" hidden>
-              <div class="quiz-title">Quiz before your move</div>
-              <div class="quiz-question" id="quizQuestionText"></div>
-              <div class="quiz-options" id="quizOptions"></div>
-              <div class="quiz-feedback" id="quizFeedback"></div>
-            </div>
-            <div class="status-line" id="modeText">
-              Mode: 2 players • Glyphs: X / O • Theme: Marble Day
-            </div>
-            <div class="share-row">
-              <button type="button" class="btn btn-share" id="btnShare">Share game</button>
-            </div>
-          </section>
-        </div>
-        <!-- Board column -->
-        <div class="board-shell">
-          <div
-            id="board"
-            class="board"
-            role="grid"
-            aria-label="Tic Tac Toe board"
-            aria-activedescendant=""
-          >
-            <!-- cells are generated by JS -->
-          </div>
-        </div>
-      </div>
-    </div>
+<body>
+
+<!-- ================= LEFT PANEL ================= -->
+<div class="sidebar">
+  <h2>Котик после уроков</h2>
+
+  <button id="boardBtn">
+    Поработать у доски
+    <span class="status-label" id="boardStatus"></span>
+  </button>
+
+  <button id="tabletBtn">
+    Поработать на планшете
+    <span class="status-label" id="tabletStatus"></span>
+  </button>
+
+  <button id="playBtn">Поиграть</button>
+  <button id="exitBtn">Выйти из класса</button>
+</div>
+
+<!-- ================= MAIN SCENE ================= -->
+<div class="scene">
+  <img id="sceneImage" src="https://via.placeholder.com/900x500?text=Класс">
+  <div class="preview-label" id="previewLabel">Класс</div>
+</div>
+
+<!-- ================= MODAL ================= -->
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <iframe id="modalFrame"></iframe>
   </div>
-  <!-- Customize modal -->
-  <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <div class="modal-header">
-        <div class="modal-title" id="modalTitle">Customize Arena</div>
-        <button class="modal-close" type="button" id="btnModalClose" aria-label="Close customization dialog">×</button>
-      </div>
-      <form class="modal-body" id="customizeForm">
-        <div class="field-group">
-          <div class="field-label">Theme</div>
-          <div class="options-row" role="radiogroup" aria-label="Theme">
-            <label class="chip">
-              <input type="radio" name="theme" value="day" checked>
-              Marble Day
-            </label>
-            <label class="chip">
-              <input type="radio" name="theme" value="night">
-              Night Legion
-            </label>
-            <label class="chip">
-              <input type="radio" name="theme" value="legion">
-              Sand Legion
-            </label>
-          </div>
-        </div>
-        <div class="field-group">
-          <div class="field-label">Glyphs</div>
-          <div class="options-row" role="radiogroup" aria-label="Glyph style">
-            <label class="chip">
-              <input type="radio" name="glyphs" value="classic" checked>
-              <span class="glyph-preview">X</span>/<span class="glyph-preview">O</span>
-            </label>
-            <label class="chip">
-              <input type="radio" name="glyphs" value="roman">
-              <span class="glyph-preview">⚔</span>/<span class="glyph-preview">✪</span>
-            </label>
-          </div>
-        </div>
-        <div class="field-group">
-          <div class="field-label">Mode</div>
-          <div class="options-row" role="radiogroup" aria-label="Game mode">
-            <label class="chip">
-              <input type="radio" name="mode" value="pvp" checked>
-              2 Players
-            </label>
-            <label class="chip">
-              <input type="radio" name="mode" value="ai">
-              vs AI
-            </label>
-          </div>
-        </div>
-        <div class="field-group">
-          <div class="field-label">First Move</div>
-          <div class="options-row" role="radiogroup" aria-label="First move">
-            <label class="chip">
-              <input type="radio" name="first" value="X" checked>
-              X
-            </label>
-            <label class="chip">
-              <input type="radio" name="first" value="O">
-              O
-            </label>
-          </div>
-        </div>
-        <div class="field-group">
-          <div class="field-label">AI Discipline</div>
-          <div class="options-row" role="radiogroup" aria-label="AI strength">
-            <label class="chip">
-              <input type="radio" name="ai" value="perfect" checked>
-              Perfect
-            </label>
-            <label class="chip">
-              <input type="radio" name="ai" value="pragmatic">
-              Pragmatic
-            </label>
-            <label class="chip">
-              <input type="radio" name="ai" value="reckless">
-              Reckless
-            </label>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-ghost" id="btnModalCancel">Cancel</button>
-          <button type="submit" class="btn btn-primary">Apply</button>
-        </div>
-      </form>
-    </div>
+</div>
+
+<!-- ================= ENDINGS ================= -->
+<div class="ending" id="endingGood">
+  <div class="ending-box">
+    <h1>🙂 Хорошая концовка</h1>
+    <p>— Молодец, котик. Ты отлично поработал и сделал всё как следует.</p>
   </div>
-  <div class="sr-only" aria-live="polite" id="srStatus"></div>
-  <script>
-    // ====== DOM helpers ======
-    const boardEl = document.getElementById("board");
-    const statusText = document.getElementById("statusText");
-    const modeText = document.getElementById("modeText");
-    const bannerText = document.getElementById("bannerText");
-    const scoreXEl = document.getElementById("scoreX");
-    const scoreOEl = document.getElementById("scoreO");
-    const scoreDrawEl = document.getElementById("scoreDraw");
-    const srStatus = document.getElementById("srStatus");
-    const btnNewRound = document.getElementById("btnNewRound");
-    const btnCustomize = document.getElementById("btnCustomize");
-    const btnResetScores = document.getElementById("btnResetScores");
-    const btnShare = document.getElementById("btnShare");
-    const modalBackdrop = document.getElementById("modalBackdrop");
-    const btnModalClose = document.getElementById("btnModalClose");
-    const btnModalCancel = document.getElementById("btnModalCancel");
-    const customizeForm = document.getElementById("customizeForm");
-    const confettiCanvas = document.getElementById("confettiCanvas");
-    const prefersReducedMotion = window.matchMedia &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    // Quiz DOM
-    const quizShell = document.getElementById("quizShell");
-    const quizQuestionText = document.getElementById("quizQuestionText");
-    const quizOptionsEl = document.getElementById("quizOptions");
-    const quizFeedback = document.getElementById("quizFeedback");
-    // ====== Game state ======
-    let board = Array(9).fill(null);
-    let currentPlayer = "X";
-    let firstPlayer = "X";
-    let scores = { X: 0, O: 0, draw: 0 };
-    let mode = "pvp"; // "pvp" or "ai"
-    let aiDiscipline = "perfect"; // perfect / pragmatic / reckless
-    let aiPlayer = "O";
-    let glyphMode = "classic"; // classic / roman
-    let theme = "day";
-    let gameOver = false;
-    let lastWinner = null;
-    let confettiRunning = false;
-    // Quiz state
-    let quizActive = false;
-    let allowMoveThisTurn = false;
-    let pendingMoveIndex = null;
-    let currentQuizQuestion = null;
-    let lastUsedQuizIndex = -1; // ← prevents immediate repetition
+</div>
 
-    // ========= Board setup with ARIA =========
-    function createBoardCells() {
-      boardEl.innerHTML = "";
-      for (let i = 0; i < 9; i++) {
-        const cell = document.createElement("button");
-        cell.className = "cell";
-        cell.id = "cell-" + i;
-        cell.type = "button";
-        cell.setAttribute("role", "gridcell");
-        cell.setAttribute("aria-selected", "false");
-        cell.setAttribute("data-index", String(i));
-        cell.setAttribute("aria-label", `Row ${Math.floor(i / 3) + 1}, column ${(i % 3) + 1}`);
-        cell.tabIndex = i === 0 ? 0 : -1;
-        cell.addEventListener("click", onCellClick);
-        cell.addEventListener("keydown", onCellKeyDown);
-        boardEl.appendChild(cell);
-      }
-    }
+<div class="ending" id="endingNeutral">
+  <div class="ending-box">
+    <h1>😐 Нейтральная концовка</h1>
+    <p>— Ты пытался, но мог бы постараться больше.</p>
+  </div>
+</div>
 
-    function glyphFor(player) {
-      if (glyphMode === "roman") {
-        return player === "X" ? "⚔" : "✪";
-      }
-      return player;
-    }
+<div class="ending" id="endingBad">
+  <div class="ending-box">
+    <h1>😾 Плохая концовка</h1>
+    <p>— Ты совсем не занимался. Так дело не пойдёт.</p>
+  </div>
+</div>
 
-    // ========= Game logic =========
-    const winningLines = [
-      [0,1,2],[3,4,5],[6,7,8],
-      [0,3,6],[1,4,7],[2,5,8],
-      [0,4,8],[2,4,6]
-    ];
+<!-- ================= DEV PANEL ================= -->
+<div class="dev-panel">
+  <button onclick="showState()">State</button>
+  <button onclick="resetGame()">Reset</button>
+  <button onclick="forceEnding('good')">Good</button>
+  <button onclick="forceEnding('neutral')">Neutral</button>
+  <button onclick="forceEnding('bad')">Bad</button>
+</div>
 
-    function checkWinner(b = board) {
-      for (const [a,bIdx,c] of winningLines) {
-        if (b[a] && b[a] === b[bIdx] && b[a] === b[c]) {
-          return { winner: b[a], line: [a,bIdx,c] };
-        }
-      }
-      if (b.every(Boolean)) return { winner: "draw", line: null };
-      return null;
-    }
+<script>
+/* ==================================================
+   STATE
+================================================== */
+const state = {
+  boardStarted: localStorage.getItem('boardStarted') === 'true',
+  boardPerfect: localStorage.getItem('boardPerfect') === 'true',
+  tabletStarted: localStorage.getItem('tabletStarted') === 'true',
+  tabletPerfect: localStorage.getItem('tabletPerfect') === 'true',
+  playedPhone: localStorage.getItem('playedPhone') === 'true'
+};
 
-    function onCellClick(e) {
-      const index = Number(e.currentTarget.getAttribute("data-index"));
-      handleMove(index);
-    }
+const sceneImage = document.getElementById('sceneImage');
+const previewLabel = document.getElementById('previewLabel');
+const modal = document.getElementById('modal');
+const modalFrame = document.getElementById('modalFrame');
 
-    function onCellKeyDown(e) {
-      const index = Number(e.currentTarget.getAttribute("data-index"));
-      const row = Math.floor(index / 3);
-      const col = index % 3;
-      switch (e.key) {
-        case "ArrowUp":
-          e.preventDefault();
-          focusCell(((row + 2) % 3) * 3 + col);
-          break;
-        case "ArrowDown":
-          e.preventDefault();
-          focusCell(((row + 1) % 3) * 3 + col);
-          break;
-        case "ArrowLeft":
-          e.preventDefault();
-          focusCell(row * 3 + ((col + 2) % 3));
-          break;
-        case "ArrowRight":
-          e.preventDefault();
-          focusCell(row * 3 + ((col + 1) % 3));
-          break;
-        case " ":
-        case "Enter":
-          e.preventDefault();
-          handleMove(index);
-          break;
-      }
-    }
+// 🔴 ИСПРАВЛЕНО: объявлены все кнопки
+const boardBtn = document.getElementById('boardBtn');
+const tabletBtn = document.getElementById('tabletBtn');
+const playBtn = document.getElementById('playBtn');
+const exitBtn = document.getElementById('exitBtn');
 
-    function focusCell(index) {
-      const cell = document.getElementById("cell-" + index);
-      if (cell) cell.focus();
-    }
+/* ==================================================
+   UI
+================================================== */
+function updateButtons() {
+  // Доска
+  if (state.boardPerfect) {
+    boardBtn.disabled = true;
+    document.getElementById('boardStatus').textContent = '✓ пройдено';
+    document.getElementById('boardStatus').className = 'status-label completed';
+  } else if (state.boardStarted) {
+    boardBtn.disabled = false;
+    document.getElementById('boardStatus').textContent = 'в процессе';
+    document.getElementById('boardStatus').className = 'status-label processing';
+  } else {
+    boardBtn.disabled = false;
+    document.getElementById('boardStatus').textContent = '';
+    document.getElementById('boardStatus').className = 'status-label';
+  }
 
-    // ===== Quiz logic =====
-    const quizQuestionsRaw = [
-      ["___ you like apples?","Do","Does","Did",1],
-      ["She ___ to school every day.","go","goes","going",2],
-      ["___ he play football?","Do","Does","Is",2],
-      ["They ___ speak Spanish.","don’t","doesn’t","not",1],
-      ["Where ___ you live?","do","does","are",1],
-      ["My father ___ coffee.","likes","like","liking",1],
-      ["___ your sister read books?","Do","Does","Did",2],
-      ["I ___ understand this word.","don’t","doesn’t","no",1],
-      ["What time ___ she get up?","do","does","is",2],
-      ["We ___ watch TV in the morning.","do","don’t","does",2],
-      ["___ they have a car?","Do","Does","Are",1],
-      ["He ___ play the piano.","doesn’t","don’t","not",1],
-      ["Where ___ your parents work?","do","does","are",1],
-      ["She ___ like pizza.","don’t","doesn’t","not",2],
-      ["___ you go to bed early?","Do","Does","Are",1],
-      ["My dog ___ eat fish.","doesn’t","don’t","no",1],
-      ["What ___ you do on Sundays?","does","are","do",3],
-      ["He ___ to music every day.","listen","listens","listening",2],
-      ["___ your friends play tennis?","Do","Does","Are",1],
-      ["I ___ drink tea.","don’t","doesn’t","no",1]
-    ];
+  // Планшет
+  if (state.tabletPerfect) {
+    tabletBtn.disabled = true;
+    document.getElementById('tabletStatus').textContent = '✓ пройдено';
+    document.getElementById('tabletStatus').className = 'status-label completed';
+  } else if (state.tabletStarted) {
+    tabletBtn.disabled = false;
+    document.getElementById('tabletStatus').textContent = 'в процессе';
+    document.getElementById('tabletStatus').className = 'status-label processing';
+  } else {
+    tabletBtn.disabled = false;
+    document.getElementById('tabletStatus').textContent = '';
+    document.getElementById('tabletStatus').className = 'status-label';
+  }
+}
+updateButtons();
 
-    const quizQuestions = quizQuestionsRaw.map(([q,a,b,c,correct]) => ({
-      text: q,
-      options: [a,b,c],
-      correct: correct - 1
-    }));
+/* ==================================================
+   PREVIEW HOVERS
+================================================== */
+boardBtn.onmouseenter = () => {
+  sceneImage.src = 'https://via.placeholder.com/900x500?text=Доска';
+  previewLabel.textContent = 'Превью: Доска';
+};
 
-    function getRandomQuizIndex() {
-      let idx;
-      do {
-        idx = Math.floor(Math.random() * quizQuestions.length);
-      } while (quizQuestions.length > 1 && idx === lastUsedQuizIndex);
-      lastUsedQuizIndex = idx;
-      return idx;
-    }
+tabletBtn.onmouseenter = () => {
+  sceneImage.src = 'https://via.placeholder.com/900x500?text=Планшет';
+  previewLabel.textContent = 'Превью: Планшет';
+};
 
-    function startQuiz() {
-      quizActive = true;
-      allowMoveThisTurn = false;
-      quizFeedback.textContent = "";
-      quizFeedback.classList.remove("correct");
-      quizShell.hidden = false;
-      quizShell.setAttribute("aria-hidden", "false");
-      loadRandomQuizQuestion();
-      srStatus.textContent = "Quiz started before move.";
-    }
+document.querySelector('.sidebar').onmouseleave = () => {
+  sceneImage.src = 'https://via.placeholder.com/900x500?text=Класс';
+  previewLabel.textContent = 'Класс';
+};
 
-    function loadRandomQuizQuestion() {
-      const idx = getRandomQuizIndex();
-      currentQuizQuestion = quizQuestions[idx];
-      quizQuestionText.textContent = currentQuizQuestion.text;
-      quizOptionsEl.innerHTML = "";
-      currentQuizQuestion.options.forEach((opt, i) => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "quiz-btn";
-        btn.textContent = `${i + 1}. ${opt}`;
-        btn.addEventListener("click", () => handleQuizAnswer(i));
-        quizOptionsEl.appendChild(btn);
-      });
-    }
+/* ==================================================
+   MODAL
+================================================== */
+function openModal(src) {
+  modalFrame.src = src;
+  modal.classList.add('active');
+}
 
-    function handleQuizAnswer(choiceIndex) {
-      if (!quizActive || !currentQuizQuestion) return;
-      if (choiceIndex === currentQuizQuestion.correct) {
-        quizFeedback.textContent = "ПРАВИЛЬНО!";
-        quizFeedback.classList.add("correct");
-        srStatus.textContent = "Quiz answered correctly.";
-        allowMoveThisTurn = true;
-        quizActive = false;
-        setTimeout(() => {
-          quizShell.hidden = true;
-          quizFeedback.textContent = "";
-          quizFeedback.classList.remove("correct");
-          if (pendingMoveIndex !== null) {
-            const idx = pendingMoveIndex;
-            pendingMoveIndex = null;
-            handleMove(idx);
-          }
-        }, 450);
-      } else {
-        quizFeedback.textContent = "Давай попробуем еще разок";
-        quizFeedback.classList.remove("correct");
-        srStatus.textContent = "Quiz answer incorrect. New question.";
-        setTimeout(loadRandomQuizQuestion, 700);
-      }
-    }
+function closeModal() {
+  modal.classList.remove('active');
+  modalFrame.src = '';
+}
 
-    // ===== Main move handler with quiz gate =====
-    function handleMove(index) {
-      if (gameOver || board[index]) return;
-      if (mode === "ai" && currentPlayer === aiPlayer) return;
-      if (!allowMoveThisTurn) {
-        pendingMoveIndex = index;
-        if (!quizActive) {
-          startQuiz();
-        }
-        return;
-      }
-      finalizeMove(index);
-    }
+/* ==================================================
+   BUTTON LOGIC
+================================================== */
+boardBtn.onclick = () => {
+  state.boardStarted = true;
+  localStorage.setItem('boardStarted', 'true');
+  updateButtons(); // ← сразу показать "в процессе"
+  openModal('games/maze/index.html');
+};
 
-    function finalizeMove(index) {
-      if (gameOver || board[index]) return;
-      board[index] = currentPlayer;
-      updateBoardUI();
-      const result = checkWinner();
-      if (result) {
-        endRound(result);
-        return;
-      }
-      currentPlayer = currentPlayer === "X" ? "O" : "X";
-      allowMoveThisTurn = false;
-      updateStatus();
-      if (mode === "ai" && currentPlayer === aiPlayer && !gameOver) {
-        window.setTimeout(aiMove, 180);
-      }
-    }
+tabletBtn.onclick = () => {
+  state.tabletStarted = true;
+  localStorage.setItem('tabletStarted', 'true');
+  updateButtons(); // ← сразу показать "в процессе"
+  openModal('games/tic-tac-toe/index.html');
+};
 
-    function humanPlayer() {
-      return aiPlayer === "X" ? "O" : "X";
-    }
+playBtn.onclick = () => {
+  state.playedPhone = true;
+  localStorage.setItem('playedPhone', 'true');
+  openModal('games/fruit-catch/index.html');
+};
 
-    // ===== AI logic (minimax with handicaps) =====
-    function aiMove() {
-      if (gameOver) return;
-      const empty = board.map((v,i) => v ? null : i).filter(v => v !== null);
-      if (!empty.length) return;
-      let moveIndex;
-      if (aiDiscipline === "reckless") {
-        moveIndex = empty[Math.floor(Math.random() * empty.length)];
-      } else if (aiDiscipline === "pragmatic") {
-        if (Math.random() < 0.6) {
-          moveIndex = bestMove(aiPlayer);
-        } else {
-          moveIndex = empty[Math.floor(Math.random() * empty.length)];
-        }
-      } else {
-        moveIndex = bestMove(aiPlayer);
-      }
-      if (moveIndex == null) moveIndex = empty[0];
-      finalizeMove(moveIndex);
-    }
+exitBtn.onclick = () => {
+  if (state.boardPerfect && state.tabletPerfect) {
+    showEnding('good');
+  } else if (state.boardStarted || state.tabletStarted) {
+    showEnding('neutral');
+  } else {
+    showEnding('bad');
+  }
+};
 
-    function bestMove(player) {
-      const opponent = player === "X" ? "O" : "X";
-      function minimax(b, isMaximizing) {
-        const result = checkWinner(b);
-        if (result) {
-          if (result.winner === player) return { score: 10 };
-          if (result.winner === opponent) return { score: -10 };
-          return { score: 0 };
-        }
-        const avail = [];
-        for (let i = 0; i < 9; i++) if (!b[i]) avail.push(i);
-        if (isMaximizing) {
-          let best = { score: -Infinity, index: null };
-          for (const idx of avail) {
-            const clone = b.slice();
-            clone[idx] = player;
-            const res = minimax(clone, false);
-            if (res.score > best.score) best = { score: res.score, index: idx };
-          }
-          return best;
-        } else {
-          let best = { score: Infinity, index: null };
-          for (const idx of avail) {
-            const clone = b.slice();
-            clone[idx] = opponent;
-            const res = minimax(clone, true);
-            if (res.score < best.score) best = { score: res.score, index: idx };
-          }
-          return best;
-        }
-      }
-      const { index } = minimax(board.slice(), true);
-      return index;
-    }
+/* ==================================================
+   ENDINGS
+================================================== */
+function showEnding(type) {
+  document.getElementById('endingGood').classList.remove('active');
+  document.getElementById('endingNeutral').classList.remove('active');
+  document.getElementById('endingBad').classList.remove('active');
 
-    // ===== Round control =====
-    function endRound(result) {
-      gameOver = true;
-      lastWinner = result.winner;
-      quizActive = false;
-      allowMoveThisTurn = false;
-      pendingMoveIndex = null;
-      quizShell.hidden = true;
-      quizFeedback.textContent = "";
-      quizFeedback.classList.remove("correct");
-      const cells = document.querySelectorAll(".cell");
-      cells.forEach((cell, idx) => {
-        const occupied = board[idx];
-        cell.setAttribute("aria-disabled", "true");
-        if (result.line && result.line.includes(idx) && occupied !== null && result.winner !== "draw") {
-          cell.classList.add("win");
-        } else if (occupied && result.winner !== "draw") {
-          cell.classList.add("lost");
-        }
-      });
-      if (result.winner === "draw") {
-        scores.draw++;
-        scoreDrawEl.textContent = String(scores.draw);
-        bannerText.textContent = "Stalemate in the forum. No side claims the provinces.";
-        statusText.textContent = "It's a draw. Start a new round to continue the campaign.";
-        srStatus.textContent = "Round ended in a draw.";
-      } else {
-        scores[result.winner]++;
-        if (result.winner === "X") {
-          scoreXEl.textContent = String(scores.X);
-        } else {
-          scoreOEl.textContent = String(scores.O);
-        }
-        const winnerGlyph = glyphFor(result.winner);
-        bannerText.textContent = `${winnerGlyph} triumphs! Legions of ${result.winner} hold the line.`;
-        statusText.textContent = `Player ${result.winner} wins this round.`;
-        srStatus.textContent = `Player ${result.winner} has won the round.`;
-        triggerConfetti();
+  if (type === 'good') document.getElementById('endingGood').classList.add('active');
+  if (type === 'neutral') document.getElementById('endingNeutral').classList.add('active');
+  if (type === 'bad') document.getElementById('endingBad').classList.add('active');
+}
 
-        // ✅ ВАЖНОЕ ДОБАВЛЕНИЕ: уведомление родительской страницы
-        if (window.parent && typeof window.parent.markTabletPerfect === 'function') {
-          window.parent.markTabletPerfect();
-        }
-      }
-    }
+/* ==================================================
+   MINI-GAME CALLBACKS
+================================================== */
+window.markBoardPerfect = function () {
+  state.boardPerfect = true;
+  localStorage.setItem('boardPerfect', 'true');
+  updateButtons();
+  closeModal();
+};
 
-    function resetBoard(keepScores = true) {
-      board = Array(9).fill(null);
-      gameOver = false;
-      lastWinner = null;
-      quizActive = false;
-      allowMoveThisTurn = false;
-      pendingMoveIndex = null;
-      quizShell.hidden = true;
-      quizFeedback.textContent = "";
-      quizFeedback.classList.remove("correct");
-      const cells = document.querySelectorAll(".cell");
-      cells.forEach((cell, idx) => {
-        cell.textContent = "";
-        cell.className = "cell";
-        cell.setAttribute("aria-selected", "false");
-        cell.setAttribute("aria-disabled", "false");
-        cell.tabIndex = idx === 0 ? 0 : -1;
-      });
-      currentPlayer = firstPlayer;
-      updateStatus();
-      bannerText.textContent = "Awaiting your strategy, commander.";
-      if (!keepScores) {
-        scores = { X: 0, O: 0, draw: 0 };
-        scoreXEl.textContent = "0";
-        scoreOEl.textContent = "0";
-        scoreDrawEl.textContent = "0";
-      }
-      if (mode === "ai" && currentPlayer === aiPlayer) {
-        setTimeout(aiMove, 220);
-      }
-    }
+window.markTabletPerfect = function () {
+  state.tabletPerfect = true;
+  localStorage.setItem('tabletPerfect', 'true');
+  updateButtons();
+  closeModal();
+};
 
-    function updateBoardUI() {
-      for (let i = 0; i < 9; i++) {
-        const cell = document.getElementById("cell-" + i);
-        const val = board[i];
-        if (val) {
-          cell.textContent = glyphFor(val);
-          cell.classList.add("cell-occupied");
-          cell.setAttribute("aria-selected", "true");
-        } else {
-          cell.textContent = "";
-          cell.classList.remove("cell-occupied");
-          cell.setAttribute("aria-selected", "false");
-        }
-      }
-    }
+/* ==================================================
+   DEV PANEL
+================================================== */
+function showState() {
+  alert(JSON.stringify(state, null, 2));
+}
 
-    function updateStatus() {
-      if (!gameOver) {
-        statusText.textContent = `${glyphFor(currentPlayer)} to move. Answer the quiz and choose a tile.`;
-      }
-      const modeLabel = mode === "pvp"
-        ? "2 players"
-        : `vs AI (${aiDiscipline.charAt(0).toUpperCase() + aiDiscipline.slice(1)})`;
-      const themeLabel = theme === "day" ? "Marble Day"
-        : theme === "night" ? "Night Legion"
-        : "Sand Legion";
-      const glyphLabel = glyphMode === "classic" ? "X / O" : "Gladius / Laurel";
-      modeText.textContent =
-        `Mode: ${modeLabel} • Glyphs: ${glyphLabel} • Theme: ${themeLabel}`;
-    }
+function resetGame() {
+  if (!confirm('Сбросить прогресс?')) return;
+  localStorage.clear();
+  location.reload();
+}
 
-    // ===== Confetti =====
-    let confettiParticles = [];
-    function initConfetti() {
-      const ctx = confettiCanvas.getContext("2d");
-      const resize = () => {
-        confettiCanvas.width = window.innerWidth;
-        confettiCanvas.height = window.innerHeight;
-      };
-      resize();
-      window.addEventListener("resize", resize);
-      function loop() {
-        if (!confettiRunning) {
-          ctx.clearRect(0,0,confettiCanvas.width, confettiCanvas.height);
-          requestAnimationFrame(loop);
-          return;
-        }
-        ctx.clearRect(0,0,confettiCanvas.width, confettiCanvas.height);
-        confettiParticles.forEach(p => {
-          p.y += p.speed;
-          p.x += p.drift;
-          p.rotation += p.rotationSpeed;
-          if (p.y > confettiCanvas.height) {
-            p.y = -10;
-            p.x = Math.random() * confettiCanvas.width;
-          }
-        });
-        confettiParticles.forEach(p => {
-          ctx.save();
-          ctx.translate(p.x, p.y);
-          ctx.rotate(p.rotation);
-          ctx.fillStyle = p.color;
-          ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size * 0.6);
-          ctx.restore();
-        });
-        requestAnimationFrame(loop);
-      }
-      requestAnimationFrame(loop);
-    }
-
-    function triggerConfetti() {
-      if (prefersReducedMotion) return;
-      const count = 110;
-      confettiParticles = [];
-      const colors = [
-        "#fef3c7",
-        "#fde68a",
-        "#fbbf24",
-        "#eab308",
-        "#f97316",
-        "#ef4444"
-      ];
-      for (let i = 0; i < count; i++) {
-        confettiParticles.push({
-          x: Math.random() * confettiCanvas.width,
-          y: Math.random() * confettiCanvas.height - confettiCanvas.height,
-          size: 6 + Math.random() * 6,
-          speed: 2 + Math.random() * 3,
-          drift: (Math.random() - 0.5) * 1.5,
-          rotation: Math.random() * Math.PI * 2,
-          rotationSpeed: (Math.random() - 0.5) * 0.2,
-          color: colors[Math.floor(Math.random() * colors.length)]
-        });
-      }
-      confettiRunning = true;
-      setTimeout(() => {
-        confettiRunning = false;
-      }, 1800);
-    }
-
-    // ===== Share button =====
-    function shareGame() {
-      const url = window.location.href;
-      const shareData = {
-        title: "Roman Tic Tac Toe — SPQR",
-        text: "Play this Roman Empire themed Tic Tac Toe with Present Simple quiz!",
-        url
-      };
-      if (navigator.share) {
-        navigator.share(shareData).catch(() => {
-          bannerText.textContent = "Could not open share dialog, but you can copy the link.";
-        });
-      } else if (navigator.clipboard && url.startsWith("http")) {
-        navigator.clipboard.writeText(url).then(() => {
-          bannerText.textContent = "Link copied to clipboard. Share it with your allies!";
-        }).catch(() => {
-          alert("Share this link: " + url);
-        });
-      } else {
-        alert("To share the game, upload this HTML file to a website or send it as a file to your friends.");
-      }
-    }
-
-    // ===== Modal handling =====
-    function openModal() {
-      modalBackdrop.classList.add("open");
-      modalBackdrop.setAttribute("aria-hidden", "false");
-      syncChipsWithForm();
-      const firstChip = customizeForm.querySelector(".chip input");
-      if (firstChip) {
-        firstChip.parentElement.focus?.();
-      }
-    }
-
-    function closeModal() {
-      modalBackdrop.classList.remove("open");
-      modalBackdrop.setAttribute("aria-hidden", "true");
-      btnCustomize.focus();
-    }
-
-    function syncChipsWithForm() {
-      const chips = customizeForm.querySelectorAll(".chip");
-      chips.forEach(chip => {
-        const input = chip.querySelector("input");
-        chip.classList.toggle("selected", input.checked);
-      });
-    }
-
-    customizeForm.addEventListener("change", syncChipsWithForm);
-    customizeForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const formData = new FormData(customizeForm);
-      const newTheme = formData.get("theme");
-      const newGlyphs = formData.get("glyphs");
-      const newMode = formData.get("mode");
-      const newFirst = formData.get("first");
-      const newAI = formData.get("ai");
-      theme = newTheme;
-      glyphMode = newGlyphs;
-      mode = newMode;
-      firstPlayer = newFirst;
-      aiDiscipline = newAI;
-      aiPlayer = mode === "ai"
-        ? (firstPlayer === "X" ? "O" : "X")
-        : "O";
-      document.body.classList.remove("theme-day", "theme-night", "theme-legion");
-      if (theme === "night") {
-        document.body.classList.add("theme-night");
-      } else if (theme === "legion") {
-        document.body.classList.add("theme-legion");
-      } else {
-        document.body.classList.add("theme-day");
-      }
-      updateBoardUI();
-      updateStatus();
-      resetBoard(true);
-      closeModal();
-    });
-
-    btnModalClose.addEventListener("click", closeModal);
-    btnModalCancel.addEventListener("click", closeModal);
-    modalBackdrop.addEventListener("click", (e) => {
-      if (e.target === modalBackdrop) closeModal();
-    });
-
-    // ===== Buttons =====
-    btnNewRound.addEventListener("click", () => {
-      resetBoard(true);
-      srStatus.textContent = "New round started.";
-    });
-
-    btnResetScores.addEventListener("click", () => {
-      resetBoard(false);
-      srStatus.textContent = "Scores reset and new round started.";
-    });
-
-    btnCustomize.addEventListener("click", openModal);
-    btnShare.addEventListener("click", shareGame);
-
-    // ===== Init =====
-    createBoardCells();
-    updateStatus();
-    initConfetti();
-    if (mode === "ai" && currentPlayer === aiPlayer) {
-      setTimeout(aiMove, 200);
-    }
-  </script>
+function forceEnding(type) {
+  showEnding(type);
+}
+</script>
 </body>
 </html>
