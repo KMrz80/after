@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Past simple maze</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #0f172a;
+            color: #cbd5e1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow: auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 800px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #60a5fa;
+            text-shadow: 0 0 10px rgba(96, 165, 250, 0.5);
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 15px;
+            background-color: #1e293b;
+            padding: 12px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        .stats {
+            display: flex;
+            gap: 25px;
+        }
+        
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+        
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #f8fafc;
+        }
+        
+        .keys-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .keys-label {
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #fbbf24;
+        }
+        
+        .keys-icons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .key-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #fbbf24;
+            opacity: 0.3;
+            transition: opacity 0.3s;
+        }
+        
+        .key-icon.collected {
+            opacity: 1;
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 1/1;
+            margin: 0 auto;
+        }
+        
+        canvas {
+            background-color: #1e293b;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 800px;
+            justify-content: center;
+        }
+        
+        button {
+            background: linear-gradient(to bottom, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(to bottom, #60a5fa, #3b82f6);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.9);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: #1e293b;
+            border-radius: 16px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid #334155;
+            animation: modalAppear 0.3s forwards;
+        }
+        
+        @keyframes modalAppear {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        
+        .modal h2 {
+            color: #60a5fa;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.8rem;
+        }
+        
+        .modal p {
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            text-align: center;
+            color: #e2e8f0;
+        }
+        
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .quiz-option {
+            background-color: #334155;
+            border: 2px solid #475569;
+            color: #e2e8f0;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        
+        .quiz-option:hover {
+            background-color: #475569;
+            border-color: #60a5fa;
+            transform: translateY(-2px);
+        }
+        
+        .victory-message {
+            text-align: center;
+            font-size: 2rem;
+            color: #10b981;
+            margin: 20px 0;
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+        
+        .instructions {
+            margin-top: 20px;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 0.95rem;
+            max-width: 800px;
+        }
+        
+        @media (max-width: 600px) {
+            .game-info {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .stats {
+                gap: 15px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Past simple Maze DEAL</h1>
+    </div>
+    
+    <div class="game-info">
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-label">TIME</div>
+                <div id="timer" class="stat-value">00:00.0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">STEPS</div>
+                <div id="steps" class="stat-value">0</div>
+            </div>
+        </div>
+        <div class="keys-container">
+            <div class="keys-label">KEYS</div>
+            <div class="keys-icons" id="keys-icons"></div>
+        </div>
+    </div>
+    
+    <div class="game-container">
+        <canvas id="mazeCanvas"></canvas>
+    </div>
+    
+    <div class="controls">
+        <button id="newMazeBtn">New Maze</button>
+        <button id="replayBtn">Replay</button>
+    </div>
+    
+    <div class="instructions">
+        Use arrow keys or WASD to move. Collect all 10 keys by answering questions correctly, then find the exit!
+    </div>
+    
+    <!-- Quiz Modal -->
+    <div id="quizModal" class="modal">
+        <div class="modal-content">
+            <h2>Answer the Question</h2>
+            <p id="quizQuestion">Question will appear here</p>
+            <div class="quiz-options" id="quizOptions">
+                <!-- Options will be inserted here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Victory Modal -->
+    <div id="victoryModal" class="modal">
+        <div class="modal-content">
+            <h2>Congratulations!</h2>
+            <div class="victory-message">⭐ Perfect route!</div>
+            <p id="victoryStats">Time: 00:00.0 | Steps: 0</p>
+            <button id="playAgainBtn">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // Game constants
+        const MAZE_SIZE = 25;
+        const CELL_SIZE = 20;
+        const PLAYER_COLOR = '#06b6d4';
+        const GOAL_COLOR = '#10b981';
+        const KEY_COLOR = '#28f755';
+        const ENEMY_COLOR = '#ef4444';
+        const WALL_COLOR = '#334155';
+        const PATH_COLOR = '#1e293b';
+        
+        // Game state
+        let maze = [];
+        let playerPos = {x: 1, y: 1};
+        let goalPos = null;
+        let keys = [];
+        let collectedKeys = 0;
+        let enemies = [];
+        let exitActive = false;
+        let gameRunning = true;
+        let steps = 0;
+        let startTime = null;
+        let timerInterval = null;
+        
+        // DOM elements
+        const canvas = document.getElementById('mazeCanvas');
+        const ctx = canvas.getContext('2d');
+        const timerEl = document.getElementById('timer');
+        const stepsEl = document.getElementById('steps');
+        const keysIconsContainer = document.getElementById('keys-icons');
+        const quizModal = document.getElementById('quizModal');
+        const quizQuestionEl = document.getElementById('quizQuestion');
+        const quizOptionsEl = document.getElementById('quizOptions');
+        const victoryModal = document.getElementById('victoryModal');
+        const victoryStatsEl = document.getElementById('victoryStats');
+        const newMazeBtn = document.getElementById('newMazeBtn');
+        const replayBtn = document.getElementById('replayBtn');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+        
+        // Quiz questions
+        const quizQuestions = [
+            "Go,Goed,Go,Went,3",
+            "Eat,Eated,Eat,Ate,3",
+            "See,Seed,See,Saw,3",
+            "Take,Took,Taked,Take,1",
+            "Come,Comed,Come,Came,3",
+            "Give,Gived,Give,Gave,3",
+            "Find,Finded,Find,Found,3",
+            "Make,Maked,Make,Made,3",
+            "Get,Getted,Get,Got,3",
+            "Know,Knowed,Know,Knew,3",
+            "Think,Thought,Think,Thinking,1",
+            "Say,Sayed,Say,Said,3",
+            "Run,Ranned,Run,Ran,3",
+            "Put,Putted,Put,Puted,2",
+            "Read,Readed,Red,Read,3",
+            "Write,Writed,Write,Wrote,3",
+            "Speak,Speaked,Speak,Spoke,3",
+            "Break,Breaked,Broke,Break,2",
+            "Meet,Meet,Meeted,Met,3",
+            "Pay,Payed,Pay,Paid,3",
+            "Sit,Sitted,Sit,Sat,3",
+            "Stand,Stand,Stood,Standed,2",
+            "Begin,Begun,Began,Begin,2",
+            "Drink,Drank,Drink,Dringed,1",
+            "Sing,Sang,Sing,Singed,1",
+            "Swim,Swimmed,Swam,Swim,2",
+            "Fly,Flied,Flew,Fly,2",
+            "Ride,Rided,Rode,Ride,2",
+            "Drive,Drived,Drove,Drive,2",
+            "Choose,Choosed,Chose,Choose,2",
+            "Forget,Forgetted,Forgot,Forget,2",
+            "Wear,Wore,Wear,Wearned,1",
+            "Tear,Tore,Tear,Teared,1",
+            "Feel,Felt,Feel,Feeld,1",
+            "Keep,Keeped,Kept,Keep,2",
+            "Leave,Leaved,Left,Leave,2",
+            "Lose,Lost,Lose,Loosed,1",
+            "Send,Sended,Send,Sent,3",
+            "Build,Builded,Built,Build,2",
+            "Catch,Catched,Caught,Catch,2",
+            "Teach,Teached,Teach,Taught,3",
+            "Buy,Buyed,Bought,Buy,2",
+            "Bring,Bringed,Brought,Bring,2",
+            "Fight,Fight,Fought,Fighted,2",
+            "Sleep,Sleeped,Slept,Sleep,2",
+            "Sweep,Sweeped,Swept,Sweep,2",
+            "Tell,Telled,Told,Tell,2",
+            "Sell,Selled,Sold,Sell,2",
+            "Hear,Heard,Hear,Heared,1",
+            "Understand,Understood,Understand,Understanded,1"
+        ];
+        
+        // Initialize key icons
+        function initKeyIcons() {
+            keysIconsContainer.innerHTML = '';
+            for (let i = 0; i < 10; i++) {
+                const keyIcon = document.createElement('div');
+                keyIcon.className = 'key-icon';
+                keyIcon.id = `key-${i}`;
+                keysIconsContainer.appendChild(keyIcon);
+            }
+        }
+        
+        // Format time for display
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            const tenths = Math.floor((seconds % 1) * 10);
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${tenths}`;
+        }
+        
+        // Start the game timer
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                const elapsed = (Date.now() - startTime) / 1000;
+                timerEl.textContent = formatTime(elapsed);
+            }, 100);
+        }
+        
+        // Update steps counter
+        function updateSteps() {
+            stepsEl.textContent = steps;
+        }
+        
+        // Create maze using DFS backtracker algorithm
+        function createMaze() {
+            // Initialize maze with walls
+            maze = Array(MAZE_SIZE).fill().map(() => Array(MAZE_SIZE).fill(1));
+            
+            // Stack for DFS
+            const stack = [];
+            const visited = Array(MAZE_SIZE).fill().map(() => Array(MAZE_SIZE).fill(false));
+            
+            // Start from (1,1)
+            let x = 1, y = 1;
+            visited[y][x] = true;
+            maze[y][x] = 0;
+            stack.push({x, y});
+            
+            // Directions: up, right, down, left
+            const directions = [[0, -2], [2, 0], [0, 2], [-2, 0]];
+            
+            while (stack.length > 0) {
+                const current = stack[stack.length - 1];
+                let unvisitedNeighbors = [];
+                
+                // Check all 4 directions
+                for (const [dx, dy] of directions) {
+                    const nx = current.x + dx;
+                    const ny = current.y + dy;
+                    
+                    if (nx > 0 && nx < MAZE_SIZE - 1 && ny > 0 && ny < MAZE_SIZE - 1 && !visited[ny][nx]) {
+                        unvisitedNeighbors.push({x: nx, y: ny, dx, dy});
+                    }
+                }
+                
+                if (unvisitedNeighbors.length > 0) {
+                    // Choose random neighbor
+                    const randomIndex = Math.floor(Math.random() * unvisitedNeighbors.length);
+                    const next = unvisitedNeighbors[randomIndex];
+                    
+                    // Remove wall between current and next
+                    maze[current.y + next.dy/2][current.x + next.dx/2] = 0;
+                    maze[next.y][next.x] = 0;
+                    
+                    visited[next.y][next.x] = true;
+                    stack.push({x: next.x, y: next.y});
+                } else {
+                    stack.pop();
+                }
+            }
+            
+            // Ensure start and end are open
+            maze[1][1] = 0;
+            maze[MAZE_SIZE - 2][MAZE_SIZE - 2] = 0;
+        }
+        
+        // Find a random valid position in the maze
+        function getRandomPosition() {
+            let x, y;
+            do {
+                x = Math.floor(Math.random() * (MAZE_SIZE - 2)) + 1;
+                y = Math.floor(Math.random() * (MAZE_SIZE - 2)) + 1;
+            } while (maze[y][x] === 1 || 
+                     (x === playerPos.x && y === playerPos.y) ||
+                     keys.some(key => key.x === x && key.y === y) ||
+                     (goalPos && goalPos.x === x && goalPos.y === y) ||
+                     enemies.some(enemy => enemy.x === x && enemy.y === y));
+            
+            return {x, y};
+        }
+        
+        // Place keys in random positions
+        function placeKeys() {
+            keys = [];
+            for (let i = 0; i < 10; i++) {
+                keys.push(getRandomPosition());
+            }
+        }
+        
+        // Place enemies in random positions
+        function placeEnemies() {
+            enemies = [];
+            for (let i = 0; i < 5; i++) {
+                enemies.push(getRandomPosition());
+            }
+        }
+        
+        // Draw the entire game
+        function drawGame() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw maze
+            for (let y = 0; y < MAZE_SIZE; y++) {
+                for (let x = 0; x < MAZE_SIZE; x++) {
+                    if (maze[y][x] === 1) {
+                        ctx.fillStyle = WALL_COLOR;
+                        ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    } else {
+                        ctx.fillStyle = PATH_COLOR;
+                        ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    }
+                }
+            }
+            
+            // Draw keys
+            ctx.fillStyle = KEY_COLOR;
+            for (const key of keys) {
+                ctx.beginPath();
+                ctx.arc(
+                    key.x * CELL_SIZE + CELL_SIZE/2,
+                    key.y * CELL_SIZE + CELL_SIZE/2,
+                    CELL_SIZE/3,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+            }
+            
+            // Draw exit if active
+            if (exitActive && goalPos) {
+                ctx.fillStyle = GOAL_COLOR;
+                ctx.beginPath();
+                ctx.arc(
+                    goalPos.x * CELL_SIZE + CELL_SIZE/2,
+                    goalPos.y * CELL_SIZE + CELL_SIZE/2,
+                    CELL_SIZE/2.5,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+            }
+            
+            // Draw enemies
+            if (exitActive) {
+                ctx.fillStyle = ENEMY_COLOR;
+                for (const enemy of enemies) {
+                    ctx.beginPath();
+                    ctx.arc(
+                        enemy.x * CELL_SIZE + CELL_SIZE/2,
+                        enemy.y * CELL_SIZE + CELL_SIZE/2,
+                        CELL_SIZE/3,
+                        0,
+                        Math.PI * 2
+                    );
+                    ctx.fill();
+                }
+            }
+            
+            // Draw player with glow effect
+            ctx.shadowColor = PLAYER_COLOR;
+            ctx.shadowBlur = 15;
+            ctx.fillStyle = PLAYER_COLOR;
+            ctx.beginPath();
+            ctx.arc(
+                playerPos.x * CELL_SIZE + CELL_SIZE/2,
+                playerPos.y * CELL_SIZE + CELL_SIZE/2,
+                CELL_SIZE/2.5,
+                0,
+                Math.PI * 2
+            );
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+        
+        // Move enemies randomly
+        function moveEnemies() {
+            if (!exitActive) return;
+            
+            for (const enemy of enemies) {
+                // 30% chance to move
+                if (Math.random() > 0.3) continue;
+                
+                const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+                const validMoves = [];
+                
+                for (const [dx, dy] of directions) {
+                    const nx = enemy.x + dx;
+                    const ny = enemy.y + dy;
+                    
+                    if (nx > 0 && nx < MAZE_SIZE - 1 && ny > 0 && ny < MAZE_SIZE - 1 && maze[ny][nx] === 0) {
+                        validMoves.push({dx, dy});
+                    }
+                }
+                
+                if (validMoves.length > 0) {
+                    const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+                    enemy.x += randomMove.dx;
+                    enemy.y += randomMove.dy;
+                }
+            }
+        }
+        
+        // Check if player collected a key
+        function checkKeyCollection() {
+            for (let i = 0; i < keys.length; i++) {
+                if (keys[i].x === playerPos.x && keys[i].y === playerPos.y) {
+                    // Remove the key from the array
+                    keys.splice(i, 1);
+                    // Show quiz modal
+                    showQuizModal();
+                    return;
+                }
+            }
+        }
+        
+        // Check if player reached the exit
+        function checkExit() {
+            if (exitActive && goalPos && playerPos.x === goalPos.x && playerPos.y === goalPos.y) {
+                endGame();
+            }
+        }
+        
+        // Check if player touched an enemy
+        function checkEnemyCollision() {
+            if (!exitActive) return;
+            
+            for (const enemy of enemies) {
+                if (playerPos.x === enemy.x && playerPos.y === enemy.y) {
+                    // Move exit to a new location
+                    goalPos = getRandomPosition();
+                    drawGame();
+                    return;
+                }
+            }
+        }
+        
+        // Show quiz modal with a random question
+        function showQuizModal() {
+            const randomQuestion = quizQuestions[Math.floor(Math.random() * quizQuestions.length)];
+            const parts = randomQuestion.split(',');
+            const question = parts[0];
+            const options = parts.slice(1, 4);
+            const correctAnswer = parseInt(parts[4]) - 1;
+            
+            quizQuestionEl.textContent = `What is the past tense of "${question}"?`;
+            
+            quizOptionsEl.innerHTML = '';
+            options.forEach((option, index) => {
+                const button = document.createElement('div');
+                button.className = 'quiz-option';
+                button.textContent = option;
+                button.addEventListener('click', () => {
+                    if (index === correctAnswer) {
+                        // Correct answer
+                        collectedKeys++;
+                        document.getElementById(`key-${collectedKeys - 1}`).classList.add('collected');
+                        
+                        // Check if all keys are collected
+                        if (collectedKeys === 10) {
+                            activateExit();
+                        }
+                    } else {
+                        // Wrong answer - place key in new location
+                        keys.push(getRandomPosition());
+                    }
+                    
+                    quizModal.style.display = 'none';
+                    drawGame();
+                });
+                quizOptionsEl.appendChild(button);
+            });
+            
+            quizModal.style.display = 'flex';
+        }
+        
+        // Activate exit and place enemies
+        function activateExit() {
+            exitActive = true;
+            goalPos = getRandomPosition();
+            placeEnemies();
+            drawGame();
+        }
+        
+        // End the game with victory
+       function endGame() {
+    gameRunning = false;
+    clearInterval(timerInterval);
+    const finalTime = (Date.now() - startTime) / 1000;
+    victoryStatsEl.textContent = `Time: ${formatTime(finalTime)} | Steps: ${steps}`;
+    victoryModal.style.display = 'flex';
+
+    // ✅ СООБЩАЕМ РОДИТЕЛЮ О ПОБЕДЕ
+    if (window.parent && window.parent.markBoardPerfect) {
+        window.parent.markBoardPerfect();
+    }
+}
+        
+        // Reset the game to initial state
+        function resetGame(fullReset = true) {
+            if (fullReset) {
+                collectedKeys = 0;
+                initKeyIcons();
+                exitActive = false;
+                goalPos = null;
+            }
+            
+            createMaze();
+            playerPos = {x: 1, y: 1};
+            steps = 0;
+            updateSteps();
+            gameRunning = true;
+            
+            if (fullReset) {
+                placeKeys();
+            }
+            
+            enemies = [];
+            
+            startTimer();
+            drawGame();
+        }
+        
+        // Handle keyboard input
+        function handleKeyDown(e) {
+            if (!gameRunning) return;
+            
+            let newX = playerPos.x;
+            let newY = playerPos.y;
+            
+            switch (e.key) {
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    newY--;
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    newY++;
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    newX--;
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    newX++;
+                    break;
+                default:
+                    return;
+            }
+            
+            // Check if new position is valid
+            if (newX > 0 && newX < MAZE_SIZE - 1 && newY > 0 && newY < MAZE_SIZE - 1 && maze[newY][newX] === 0) {
+                playerPos.x = newX;
+                playerPos.y = newY;
+                steps++;
+                updateSteps();
+                
+                // Check for key collection
+                checkKeyCollection();
+                
+                // Check for exit
+                checkExit();
+                
+                // Check for enemy collision
+                checkEnemyCollision();
+                
+                drawGame();
+            }
+            
+            // Prevent default behavior for arrow keys
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault();
+            }
+        }
+        
+        // Initialize the game
+        function init() {
+            // Set canvas size
+            canvas.width = MAZE_SIZE * CELL_SIZE;
+            canvas.height = MAZE_SIZE * CELL_SIZE;
+            
+            // Initialize key icons
+            initKeyIcons();
+            
+            // Set up event listeners
+            document.addEventListener('keydown', handleKeyDown);
+            newMazeBtn.addEventListener('click', () => resetGame(true));
+            replayBtn.addEventListener('click', () => resetGame(false));
+            playAgainBtn.addEventListener('click', () => {
+                victoryModal.style.display = 'none';
+                resetGame(true);
+            });
+            
+            // Close modals when clicking outside
+            window.addEventListener('click', (e) => {
+                if (e.target === quizModal) {
+                    quizModal.style.display = 'none';
+                }
+                if (e.target === victoryModal) {
+                    victoryModal.style.display = 'none';
+                    resetGame(true);
+                }
+            });
+            
+            // Start the game
+            resetGame(true);
+            
+            // Enemy movement loop
+            setInterval(moveEnemies, 500);
+        }
+        
+        // Start the game when page loads
+        window.onload = init;
+    </script>
+</body>
+</html>
