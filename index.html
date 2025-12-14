@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Котик после уроков</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    /* ==================================================
+       RESET / BASE
+    ================================================== */
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      background: #1e1e1e;
+      color: #fff;
+      display: flex;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+    }
+
+    /* ==================================================
+       LEFT PANEL
+    ================================================== */
+    .sidebar {
+      width: 240px;
+      background: #0f172a;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .sidebar h2 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      opacity: 0.9;
+    }
+
+    .sidebar button {
+      padding: 12px;
+      background: #1f2937;
+      color: #fff;
+      transition: background 0.2s, opacity 0.2s;
+    }
+
+    .sidebar button:hover:not(:disabled) {
+      background: #374151;
+    }
+
+    .sidebar button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* ==================================================
+       MAIN SCENE
+    ================================================== */
+    .scene {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      background: #e5e7eb;
+    }
+
+    .scene img {
+      width: 90%;
+      max-width: 900px;
+      height: auto;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+
+    .preview-label {
+      position: absolute;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    /* ==================================================
+       MODAL
+    ================================================== */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+   .modal-content {
+  background: #fff;
+  width: 85vw;
+  height: 85vh;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+}
+
+    .modal-content iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #000;
+      color: #fff;
+      padding: 6px 10px;
+      z-index: 2;
+    }
+
+    /* ==================================================
+       ENDINGS (PAGES INSIDE ONE HTML)
+    ================================================== */
+    .ending {
+      position: fixed;
+      inset: 0;
+      background: #111827;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 24px;
+      z-index: 20;
+    }
+
+    .ending.active {
+      display: flex;
+    }
+
+    .ending-box {
+      max-width: 600px;
+      background: #1f2937;
+      padding: 32px;
+      border-radius: 16px;
+    }
+
+    .ending-box h1 {
+      margin-top: 0;
+    }
+
+    /* ==================================================
+       DEV PANEL (TOP RIGHT)
+    ================================================== */
+    .dev-panel {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      display: flex;
+      gap: 8px;
+      z-index: 100;
+    }
+
+    .dev-panel button {
+      background: #020617;
+      color: #fff;
+      padding: 6px 10px;
+      font-size: 12px;
+      opacity: 0.85;
+    }
+
+    .dev-panel button:hover {
+      opacity: 1;
+    }
+
+    /* ==================================================
+       ADAPTIVE
+    ================================================== */
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+
+      .sidebar button {
+        flex: 1 1 45%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ================= LEFT PANEL ================= -->
+<div class="sidebar">
+  <h2>Котик после уроков</h2>
+
+  <button id="boardBtn">Поработать у доски<span class="status-label" id="boardStatus"></span>
+</button>
+  <button id="tabletBtn">Поработать на планшете<span class="status-label" id="tabletStatus"></span>
+</button>
+  <button id="playBtn">Поиграть</button>
+  <button id="exitBtn">Выйти из класса</button>
+</div>
+
+<!-- ================= MAIN SCENE ================= -->
+<div class="scene">
+  <img id="sceneImage" src="https://via.placeholder.com/900x500?text=Класс">
+  <div class="preview-label" id="previewLabel">Класс</div>
+</div>
+
+<!-- ================= MODAL ================= -->
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <iframe id="modalFrame"></iframe>
+  </div>
+</div>
+
+<!-- ================= ENDINGS ================= -->
+<div class="ending" id="endingGood">
+  <div class="ending-box">
+    <h1>🙂 Хорошая концовка</h1>
+    <p>— Молодец, котик. Ты отлично поработал и сделал всё как следует.</p>
+  </div>
+</div>
+
+<div class="ending" id="endingNeutral">
+  <div class="ending-box">
+    <h1>😐 Нейтральная концовка</h1>
+    <p>— Ты пытался, но мог бы постараться больше.</p>
+  </div>
+</div>
+
+<div class="ending" id="endingBad">
+  <div class="ending-box">
+    <h1>😾 Плохая концовка</h1>
+    <p>— Ты совсем не занимался. Так дело не пойдёт.</p>
+  </div>
+</div>
+
+<!-- ================= DEV PANEL ================= -->
+<div class="dev-panel">
+  <button onclick="showState()">State</button>
+  <button onclick="resetGame()">Reset</button>
+  <button onclick="forceEnding('good')">Good</button>
+  <button onclick="forceEnding('neutral')">Neutral</button>
+  <button onclick="forceEnding('bad')">Bad</button>
+</div>
+
+<script>
+/* ==================================================
+   STATE
+================================================== */
+const state = {
+  boardStarted: localStorage.getItem('boardStarted') === 'true',
+  boardPerfect: localStorage.getItem('boardPerfect') === 'true',
+  tabletStarted: localStorage.getItem('tabletStarted') === 'true',
+  tabletPerfect: localStorage.getItem('tabletPerfect') === 'true',
+  playedPhone: localStorage.getItem('playedPhone') === 'true'
+};
+
+const sceneImage = document.getElementById('sceneImage');
+const previewLabel = document.getElementById('previewLabel');
+const modal = document.getElementById('modal');
+const modalFrame = document.getElementById('modalFrame');
+
+const boardBtn = document.getElementById('boardBtn');
+const tabletBtn = document.getElementById('tabletBtn');
+
+/* ==================================================
+   UI
+================================================== */
+function updateButtons() {
+  boardBtn.disabled = state.boardPerfect;
+  tabletBtn.disabled = state.tabletPerfect;
+}
+updateButtons();
+
+/* ==================================================
+   PREVIEW HOVERS
+================================================== */
+boardBtn.onmouseenter = () => {
+  sceneImage.src = 'https://via.placeholder.com/900x500?text=Доска';
+  previewLabel.textContent = 'Превью: Доска';
+};
+
+tabletBtn.onmouseenter = () => {
+  sceneImage.src = 'https://via.placeholder.com/900x500?text=Планшет';
+  previewLabel.textContent = 'Превью: Планшет';
+};
+
+document.querySelector('.sidebar').onmouseleave = () => {
+  sceneImage.src = 'https://via.placeholder.com/900x500?text=Класс';
+  previewLabel.textContent = 'Класс';
+};
+
+/* ==================================================
+   MODAL
+================================================== */
+function openModal(src) {
+  modalFrame.src = src;
+  modal.classList.add('active');
+}
+
+function closeModal() {
+  modal.classList.remove('active');
+  modalFrame.src = '';
+}
+
+/* ==================================================
+   BUTTON LOGIC
+================================================== */
+// Поработать у доски → лабиринт
+boardBtn.onclick = () => {
+  state.boardStarted = true;
+  localStorage.setItem('boardStarted', 'true');
+  openModal('games/maze/index.html');
+};
+
+// Поработать на планшете → крестики-нолики
+tabletBtn.onclick = () => {
+  state.tabletStarted = true;
+  localStorage.setItem('tabletStarted', 'true');
+  openModal('games/tic-tac-toe/index.html');
+};
+
+// Поиграть → ловля фруктов
+playBtn.onclick = () => {
+  state.playedPhone = true;
+  localStorage.setItem('playedPhone', 'true');
+  openModal('games/fruit-catch/index.html');
+};
+
+exitBtn.onclick = () => {
+  if (state.boardPerfect && state.tabletPerfect) {
+    showEnding('good');
+  } else if (state.boardStarted || state.tabletStarted) {
+    showEnding('neutral');
+  } else {
+    showEnding('bad');
+  }
+};
+
+/* ==================================================
+   ENDINGS
+================================================== */
+function showEnding(type) {
+  document.getElementById('endingGood').classList.remove('active');
+  document.getElementById('endingNeutral').classList.remove('active');
+  document.getElementById('endingBad').classList.remove('active');
+
+  if (type === 'good') endingGood.classList.add('active');
+  if (type === 'neutral') endingNeutral.classList.add('active');
+  if (type === 'bad') endingBad.classList.add('active');
+}
+
+/* ==================================================
+   MINI-GAME CALLBACKS
+================================================== */
+window.markBoardPerfect = function () {
+  state.boardPerfect = true;
+  localStorage.setItem('boardPerfect', 'true');
+  updateButtons();
+  closeModal();
+};
+
+window.markTabletPerfect = function () {
+  state.tabletPerfect = true;
+  localStorage.setItem('tabletPerfect', 'true');
+  updateButtons();
+  closeModal();
+};
+
+/* ==================================================
+   DEV PANEL
+================================================== */
+function showState() {
+  alert(JSON.stringify(state, null, 2));
+}
+
+function resetGame() {
+  if (!confirm('Сбросить прогресс?')) return;
+  localStorage.clear();
+  location.reload();
+}
+
+function forceEnding(type) {
+  showEnding(type);
+}
+</script>
+</body>
+</html>
