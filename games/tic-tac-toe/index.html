@@ -1,1 +1,902 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPQR Tic Tac Toe</title>
+    <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Marble Day Theme */
+            --primary-bg: #f5f0e6;
+            --secondary-bg: #e8e1d1;
+            --accent-gold: #d4af37;
+            --accent-bronze: #cd7f32;
+            --text-dark: #3a2d22;
+            --text-light: #f5f0e6;
+            --grid-line: #b8a58c;
+            --hover-light: rgba(212, 175, 55, 0.2);
+            --win-highlight: rgba(212, 175, 55, 0.3);
+            --cell-size: 20vmin;
+            --border-radius: 12px;
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
 
+        .theme-night {
+            /* Night Legion Theme */
+            --primary-bg: #2c2c2c;
+            --secondary-bg: #1a1a1a;
+            --accent-gold: #e6c24c;
+            --accent-bronze: #c9a66b;
+            --text-dark: #f0f0f0;
+            --text-light: #2c2c2c;
+            --grid-line: #555;
+            --hover-light: rgba(230, 194, 76, 0.2);
+            --win-highlight: rgba(230, 194, 76, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Playfair Display', serif;
+            background: var(--primary-bg);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(212, 175, 55, 0.03) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(212, 175, 55, 0.03) 0%, transparent 40%);
+            transition: background-color 0.5s ease;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #3a2d22 0%, #2c2219 100%);
+            color: var(--text-light);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            position: relative;
+            z-index: 10;
+        }
+
+        .spqr-crest {
+            font-family: 'IM Fell English SC', serif;
+            font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+            letter-spacing: 3px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(45deg, var(--accent-gold), var(--accent-bronze));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--accent-gold), var(--accent-bronze));
+            color: var(--text-light);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-family: 'Playfair Display', serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .scoreboard {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            padding: 1.5rem;
+            background: var(--secondary-bg);
+            border-bottom: 2px solid var(--accent-gold);
+        }
+
+        .score-item {
+            text-align: center;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            background: var(--primary-bg);
+            box-shadow: var(--shadow);
+        }
+
+        .score-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 0.25rem;
+        }
+
+        .score-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--accent-gold);
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+            flex: 1;
+        }
+
+        .status-message {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 1.5rem;
+            min-height: 2rem;
+            color: var(--text-dark);
+            font-family: 'IM Fell English SC', serif;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 4px;
+            background: var(--grid-line);
+            padding: 4px;
+            border-radius: calc(var(--border-radius) + 4px);
+            box-shadow: var(--shadow);
+            max-width: 100vmin;
+            max-height: 100vmin;
+        }
+
+        .cell {
+            width: var(--cell-size);
+            height: var(--cell-size);
+            background: var(--secondary-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            font-size: calc(var(--cell-size) * 0.6);
+            color: var(--text-dark);
+            font-family: 'IM Fell English SC', serif;
+            user-select: none;
+        }
+
+        .cell:hover {
+            background: var(--hover-light);
+        }
+
+        .cell.x::before, .cell.x::after {
+            content: '';
+            position: absolute;
+            width: 80%;
+            height: 12%;
+            background: var(--text-dark);
+            transform: rotate(45deg);
+        }
+
+        .cell.x::after {
+            transform: rotate(-45deg);
+        }
+
+        .cell.o::before {
+            content: '';
+            position: absolute;
+            width: 60%;
+            height: 60%;
+            border: 12% solid var(--text-dark);
+            border-radius: 50%;
+        }
+
+        .cell.gladius::before {
+            content: '⚔️';
+            font-size: calc(var(--cell-size) * 0.5);
+        }
+
+        .cell.laurel::before {
+            content: '🏆';
+            font-size: calc(var(--cell-size) * 0.5);
+        }
+
+        .winning-cell {
+            background: var(--win-highlight);
+            animation: pulse 0.6s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .victory-banner {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--accent-gold), var(--accent-bronze));
+            color: var(--text-light);
+            padding: 1rem 2rem;
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
+            font-family: 'IM Fell English SC', serif;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+            animation: slideDown 0.5s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { transform: translate(-50%, -100%); }
+            to { transform: translate(-50%, 0); }
+        }
+
+        .dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .dialog {
+            background: var(--primary-bg);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            max-width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            border: 2px solid var(--accent-gold);
+        }
+
+        .dialog h2 {
+            color: var(--accent-gold);
+            margin-bottom: 1.5rem;
+            font-family: 'IM Fell English SC', serif;
+            text-align: center;
+        }
+
+        .dialog-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .dialog-section h3 {
+            margin-bottom: 0.75rem;
+            color: var(--text-dark);
+            font-size: 1.1rem;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .option input {
+            margin: 0;
+        }
+
+        .close-btn {
+            display: block;
+            margin: 1.5rem auto 0;
+            background: var(--text-dark);
+        }
+
+        .confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .controls {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .scoreboard {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+
+            .cell {
+                font-size: calc(var(--cell-size) * 0.4);
+            }
+
+            .status-message {
+                font-size: 1.2rem;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="spqr-crest">SENATUS POPULUSQUE ROMANUS</div>
+        <div class="controls">
+            <button class="btn" id="newRoundBtn">New Round</button>
+            <button class="btn" id="customizeBtn">Customize</button>
+            <button class="btn" id="resetScoresBtn">Reset Scores</button>
+        </div>
+    </div>
+
+    <div class="scoreboard">
+        <div class="score-item">
+            <div class="score-label">X (Legion)</div>
+            <div class="score-value" id="scoreX">0</div>
+        </div>
+        <div class="score-item">
+            <div class="score-label">Draws</div>
+            <div class="score-value" id="scoreDraw">0</div>
+        </div>
+        <div class="score-item">
+            <div class="score-label">O (Barbarian)</div>
+            <div class="score-value" id="scoreO">0</div>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <div class="status-message" id="statusMessage">Legion's turn</div>
+        <div class="board" id="board">
+            <div class="cell" data-index="0" role="gridcell" tabindex="0" aria-label="Top left"></div>
+            <div class="cell" data-index="1" role="gridcell" tabindex="0" aria-label="Top center"></div>
+            <div class="cell" data-index="2" role="gridcell" tabindex="0" aria-label="Top right"></div>
+            <div class="cell" data-index="3" role="gridcell" tabindex="0" aria-label="Middle left"></div>
+            <div class="cell" data-index="4" role="gridcell" tabindex="0" aria-label="Center"></div>
+            <div class="cell" data-index="5" role="gridcell" tabindex="0" aria-label="Middle right"></div>
+            <div class="cell" data-index="6" role="gridcell" tabindex="0" aria-label="Bottom left"></div>
+            <div class="cell" data-index="7" role="gridcell" tabindex="0" aria-label="Bottom center"></div>
+            <div class="cell" data-index="8" role="gridcell" tabindex="0" aria-label="Bottom right"></div>
+        </div>
+    </div>
+
+    <div class="dialog-overlay" id="customizeDialog" style="display: none;">
+        <div class="dialog">
+            <h2>Customize Your Campaign</h2>
+            
+            <div class="dialog-section">
+                <h3>Theme</h3>
+                <div class="options-grid">
+                    <label class="option">
+                        <input type="radio" name="theme" value="day" checked>
+                        Marble Day
+                    </label>
+                    <label class="option">
+                        <input type="radio" name="theme" value="night">
+                        Night Legion
+                    </label>
+                </div>
+            </div>
+
+            <div class="dialog-section">
+                <h3>Glyphs</h3>
+                <div class="options-grid">
+                    <label class="option">
+                        <input type="radio" name="glyphs" value="standard" checked>
+                        Standard X/O
+                    </label>
+                    <label class="option">
+                        <input type="radio" name="glyphs" value="roman">
+                        Gladius/Laurel
+                    </label>
+                </div>
+            </div>
+
+            <div class="dialog-section">
+                <h3>Game Mode</h3>
+                <div class="options-grid">
+                    <label class="option">
+                        <input type="radio" name="mode" value="pvp" checked>
+                        2-Player
+                    </label>
+                    <label class="option">
+                        <input type="radio" name="mode" value="ai">
+                        vs AI
+                    </label>
+                </div>
+            </div>
+
+            <div class="dialog-section">
+                <h3>First Move</h3>
+                <div class="options-grid">
+                    <label class="option">
+                        <input type="radio" name="firstMove" value="x" checked>
+                        X (Legion)
+                    </label>
+                    <label class="option">
+                        <input type="radio" name="firstMove" value="o">
+                        O (Barbarian)
+                    </label>
+                </div>
+            </div>
+
+            <div class="dialog-section">
+                <h3>AI Discipline</h3>
+                <div class="options-grid">
+                    <label class="option">
+                        <input type="radio" name="aiDiscipline" value="perfect" checked>
+                        Perfect
+                    </label>
+                    <label class="option">
+                        <input type="radio" name="aiDiscipline" value="pragmatic">
+                        Pragmatic
+                    </label>
+                    <label class="option">
+                        <input type="radio" name="aiDiscipline" value="reckless">
+                        Reckless
+                    </label>
+                </div>
+            </div>
+
+            <button class="btn close-btn" id="closeDialog">Deploy</button>
+        </div>
+    </div>
+
+    <canvas class="confetti-canvas" id="confettiCanvas" style="display: none;"></canvas>
+
+    <script>
+        class TicTacToe {
+            constructor() {
+                this.board = Array(9).fill('');
+                this.currentPlayer = 'x';
+                this.gameActive = true;
+                this.scores = { x: 0, o: 0, draw: 0 };
+                this.settings = {
+                    theme: 'day',
+                    glyphs: 'standard',
+                    mode: 'pvp',
+                    firstMove: 'x',
+                    aiDiscipline: 'perfect'
+                };
+                this.winningCombination = [];
+                
+                this.initializeElements();
+                this.setupEventListeners();
+                this.loadSettings();
+                this.updateTheme();
+                this.updateScores();
+                this.updateStatus();
+            }
+
+            initializeElements() {
+                this.cells = document.querySelectorAll('.cell');
+                this.statusMessage = document.getElementById('statusMessage');
+                this.scoreX = document.getElementById('scoreX');
+                this.scoreO = document.getElementById('scoreO');
+                this.scoreDraw = document.getElementById('scoreDraw');
+                this.customizeDialog = document.getElementById('customizeDialog');
+                this.boardElement = document.getElementById('board');
+                this.confettiCanvas = document.getElementById('confettiCanvas');
+            }
+
+            setupEventListeners() {
+                // Board cells
+                this.cells.forEach(cell => {
+                    cell.addEventListener('click', (e) => this.handleCellClick(e));
+                    cell.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            this.handleCellClick(e);
+                        }
+                    });
+                });
+
+                // Control buttons
+                document.getElementById('newRoundBtn').addEventListener('click', () => this.newRound());
+                document.getElementById('customizeBtn').addEventListener('click', () => this.showCustomizeDialog());
+                document.getElementById('resetScoresBtn').addEventListener('click', () => this.resetScores());
+                document.getElementById('closeDialog').addEventListener('click', () => this.closeCustomizeDialog());
+
+                // Dialog radio buttons
+                document.querySelectorAll('input[name="theme"]').forEach(input => {
+                    input.addEventListener('change', () => this.updateTheme());
+                });
+            }
+
+            handleCellClick(e) {
+                const index = parseInt(e.currentTarget.dataset.index);
+                
+                if (!this.gameActive || this.board[index] !== '') return;
+
+                this.makeMove(index);
+                
+                if (this.settings.mode === 'ai' && this.gameActive && this.currentPlayer === 'o') {
+                    setTimeout(() => this.aiMove(), 500);
+                }
+            }
+
+            makeMove(index) {
+                if (this.board[index] !== '') return;
+
+                this.board[index] = this.currentPlayer;
+                this.updateCell(index);
+                this.checkGameStatus();
+                this.switchPlayer();
+                this.updateStatus();
+            }
+
+            updateCell(index) {
+                const cell = this.cells[index];
+                const player = this.board[index];
+                
+                cell.className = 'cell';
+                cell.classList.add(player);
+                
+                if (this.settings.glyphs === 'roman') {
+                    cell.classList.remove('x', 'o');
+                    if (player === 'x') cell.classList.add('gladius');
+                    if (player === 'o') cell.classList.add('laurel');
+                }
+            }
+
+            checkGameStatus() {
+                const winCombo = this.checkWin();
+                if (winCombo) {
+                    this.handleWin(winCombo);
+                    return;
+                }
+
+                if (this.board.every(cell => cell !== '')) {
+                    this.handleDraw();
+                    return;
+                }
+            }
+
+            checkWin() {
+                const winPatterns = [
+                    [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+                    [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+                    [0, 4, 8], [2, 4, 6] // diagonals
+                ];
+
+                for (let pattern of winPatterns) {
+                    const [a, b, c] = pattern;
+                    if (this.board[a] && this.board[a] === this.board[b] && this.board[a] === this.board[c]) {
+                        return pattern;
+                    }
+                }
+                return null;
+            }
+
+handleWin(winningCombination) {
+    this.gameActive = false;
+    this.winningCombination = winningCombination;
+    
+    winningCombination.forEach(index => {
+        this.cells[index].classList.add('winning-cell');
+    });
+
+    this.scores[this.currentPlayer]++;
+    this.updateScores();
+    this.showVictoryBanner();
+    this.createConfetti();
+
+    // ✅ === НОВОЕ: сообщаем родительской странице, что игра пройдена ===
+    // Это работает только если игра запущена внутри iframe из квеста
+    if (window.parent && typeof window.parent.markTabletPerfect === 'function') {
+        window.parent.markTabletPerfect();
+    }
+    // 🔚 ===============================================================
+}
+
+            handleDraw() {
+                this.gameActive = false;
+                this.scores.draw++;
+                this.updateScores();
+                this.statusMessage.textContent = "It's a draw! Glory to Rome!";
+            }
+
+            switchPlayer() {
+                this.currentPlayer = this.currentPlayer === 'x' ? 'o' : 'x';
+            }
+
+            updateStatus() {
+                if (!this.gameActive) return;
+
+                if (this.settings.mode === 'ai' && this.currentPlayer === 'o') {
+                    this.statusMessage.textContent = "Barbarian's turn";
+                } else {
+                    this.statusMessage.textContent = this.currentPlayer === 'x' ? "Legion's turn" : "Barbarian's turn";
+                }
+            }
+
+            aiMove() {
+                if (!this.gameActive) return;
+
+                let move;
+                switch (this.settings.aiDiscipline) {
+                    case 'perfect':
+                        move = this.getPerfectMove();
+                        break;
+                    case 'pragmatic':
+                        move = Math.random() < 0.7 ? this.getPerfectMove() : this.getRandomMove();
+                        break;
+                    case 'reckless':
+                        move = Math.random() < 0.3 ? this.getPerfectMove() : this.getRandomMove();
+                        break;
+                }
+
+                this.makeMove(move);
+            }
+
+            getPerfectMove() {
+                // Minimax algorithm implementation
+                let bestScore = -Infinity;
+                let bestMove = -1;
+
+                for (let i = 0; i < 9; i++) {
+                    if (this.board[i] === '') {
+                        this.board[i] = 'o';
+                        let score = this.minimax(this.board, 0, false);
+                        this.board[i] = '';
+                        
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestMove = i;
+                        }
+                    }
+                }
+                return bestMove;
+            }
+
+            minimax(board, depth, isMaximizing) {
+                const winCombo = this.checkWinForMinimax(board);
+                
+                if (winCombo) {
+                    return isMaximizing ? -10 + depth : 10 - depth;
+                }
+                
+                if (board.every(cell => cell !== '')) {
+                    return 0;
+                }
+
+                if (isMaximizing) {
+                    let bestScore = -Infinity;
+                    for (let i = 0; i < 9; i++) {
+                        if (board[i] === '') {
+                            board[i] = 'o';
+                            let score = this.minimax(board, depth + 1, false);
+                            board[i] = '';
+                            bestScore = Math.max(score, bestScore);
+                        }
+                    }
+                    return bestScore;
+                } else {
+                    let bestScore = Infinity;
+                    for (let i = 0; i < 9; i++) {
+                        if (board[i] === '') {
+                            board[i] = 'x';
+                            let score = this.minimax(board, depth + 1, true);
+                            board[i] = '';
+                            bestScore = Math.min(score, bestScore);
+                        }
+                    }
+                    return bestScore;
+                }
+            }
+
+            checkWinForMinimax(board) {
+                const winPatterns = [
+                    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                    [0, 4, 8], [2, 4, 6]
+                ];
+
+                for (let pattern of winPatterns) {
+                    const [a, b, c] = pattern;
+                    if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                        return pattern;
+                    }
+                }
+                return null;
+            }
+
+            getRandomMove() {
+                const availableMoves = this.board.map((cell, index) => cell === '' ? index : null).filter(val => val !== null);
+                return availableMoves[Math.floor(Math.random() * availableMoves.length)];
+            }
+
+            showVictoryBanner() {
+                const banner = document.createElement('div');
+                banner.className = 'victory-banner';
+                banner.textContent = `${this.currentPlayer === 'x' ? 'Legion' : 'Barbarian'} Victorious!`;
+                document.body.appendChild(banner);
+
+                setTimeout(() => {
+                    banner.remove();
+                }, 3000);
+            }
+
+            createConfetti() {
+                if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+                const canvas = this.confettiCanvas;
+                canvas.style.display = 'block';
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+
+                const ctx = canvas.getContext('2d');
+                const particles = [];
+                const particleCount = 150;
+
+                for (let i = 0; i < particleCount; i++) {
+                    particles.push({
+                        x: canvas.width / 2,
+                        y: canvas.height / 2,
+                        size: Math.random() * 10 + 5,
+                        speedX: Math.random() * 6 - 3,
+                        speedY: Math.random() * -8 - 2,
+                        color: `hsl(${Math.random() * 60}, 70%, 50%)`,
+                        life: 100
+                    });
+                }
+
+                const animate = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    let stillAlive = false;
+                    particles.forEach(particle => {
+                        if (particle.life <= 0) return;
+
+                        particle.x += particle.speedX;
+                        particle.y += particle.speedY;
+                        particle.speedY += 0.1;
+                        particle.life--;
+
+                        ctx.fillStyle = particle.color;
+                        ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
+
+                        if (particle.life > 0) stillAlive = true;
+                    });
+
+                    if (stillAlive) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        canvas.style.display = 'none';
+                    }
+                };
+
+                animate();
+            }
+
+            newRound() {
+                this.board = Array(9).fill('');
+                this.currentPlayer = this.settings.firstMove;
+                this.gameActive = true;
+                this.winningCombination = [];
+
+                this.cells.forEach(cell => {
+                    cell.className = 'cell';
+                });
+
+                this.updateStatus();
+            }
+
+            resetScores() {
+                this.scores = { x: 0, o: 0, draw: 0 };
+                this.updateScores();
+            }
+
+            updateScores() {
+                this.scoreX.textContent = this.scores.x;
+                this.scoreO.textContent = this.scores.o;
+                this.scoreDraw.textContent = this.scores.draw;
+            }
+
+            showCustomizeDialog() {
+                this.customizeDialog.style.display = 'flex';
+                
+                // Set current settings in dialog
+                document.querySelector(`input[name="theme"][value="${this.settings.theme}"]`).checked = true;
+                document.querySelector(`input[name="glyphs"][value="${this.settings.glyphs}"]`).checked = true;
+                document.querySelector(`input[name="mode"][value="${this.settings.mode}"]`).checked = true;
+                document.querySelector(`input[name="firstMove"][value="${this.settings.firstMove}"]`).checked = true;
+                document.querySelector(`input[name="aiDiscipline"][value="${this.settings.aiDiscipline}"]`).checked = true;
+            }
+
+            closeCustomizeDialog() {
+                // Save settings from dialog
+                this.settings.theme = document.querySelector('input[name="theme"]:checked').value;
+                this.settings.glyphs = document.querySelector('input[name="glyphs"]:checked').value;
+                this.settings.mode = document.querySelector('input[name="mode"]:checked').value;
+                this.settings.firstMove = document.querySelector('input[name="firstMove"]:checked').value;
+                this.settings.aiDiscipline = document.querySelector('input[name="aiDiscipline"]:checked').value;
+
+                this.updateTheme();
+                this.customizeDialog.style.display = 'none';
+                this.newRound();
+                this.saveSettings();
+            }
+
+            updateTheme() {
+                if (this.settings.theme === 'night') {
+                    document.body.classList.add('theme-night');
+                } else {
+                    document.body.classList.remove('theme-night');
+                }
+            }
+
+            loadSettings() {
+                const saved = localStorage.getItem('tttSettings');
+                if (saved) {
+                    this.settings = { ...this.settings, ...JSON.parse(saved) };
+                }
+            }
+
+            saveSettings() {
+                localStorage.setItem('tttSettings', JSON.stringify(this.settings));
+            }
+        }
+
+        // Initialize game when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new TicTacToe();
+        });
+    </script>
+</body>
+</html>
+```
